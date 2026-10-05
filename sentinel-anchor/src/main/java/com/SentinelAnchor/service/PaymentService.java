@@ -30,6 +30,7 @@ public class PaymentService {
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
     private final AiWorkerClient aiWorkerClient;
+    private final VelocityService velocityService;
 
     @Transactional
     public TransactionResultDTO processPayment(TransactionRequestDTO request) {
@@ -43,6 +44,7 @@ public class PaymentService {
         if(account.getStatus() == AccountStatus.FROZEN) {
             throw new AccountFrozenException("Account #" + account.getAccountNumber() + " is FROZEN by regulatory order.");
         }
+        velocityService.checkVelocity(account.getId());
         if(request.getTransactionType()== TransactionType.WITHDRAW && account.getBalance() < request.getAmount()) {
             throw new InsufficientBalanceException("Insufficient funds. Available: ₹" + account.getBalance());
         }
@@ -76,7 +78,12 @@ public class PaymentService {
                 .minutes_since_last_tx(minutesSinceLast)
                 .build();
         AiWorkerResponseDTO aiResponse=aiWorkerClient.auditTransaction(aiRequest);
-        TransactionDecision decision=TransactionDecision.valueOf(aiResponse.getFinal_decision());
+        TransactionDecision decision=TransactionDecision.valueOf(
+                aiResponse.getFinal_decision().trim().replace(" ","_").toUpperCase());
+        if(decision==TransactionDecision.BLOCKED){
+            account.setStatus(AccountStatus.FROZEN);
+            accountRepository.save(account);
+        }
         if(decision==TransactionDecision.APPROVED){
             if(request.getTransactionType()==TransactionType.WITHDRAW) {
             account.setBalance(account.getBalance()-request.getAmount());}

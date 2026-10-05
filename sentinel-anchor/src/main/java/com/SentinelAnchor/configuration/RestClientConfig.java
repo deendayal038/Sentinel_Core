@@ -18,7 +18,7 @@ public class RestClientConfig {
     @Value("${ai-worker.base-url:http://localhost:8000}")
     private String aiWorkerBaseUrl;
 
-    @Value("${ai-worker.timeout-seconds:5}")
+    @Value("${ai-worker.timeout-seconds:30}")
     private int timeoutSeconds;
 
     @Bean

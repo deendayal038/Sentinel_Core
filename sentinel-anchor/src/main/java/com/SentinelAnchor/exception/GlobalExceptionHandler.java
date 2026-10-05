@@ -1,6 +1,5 @@
 package com.SentinelAnchor.exception;
 
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -42,6 +41,16 @@ public class GlobalExceptionHandler {
                         "status", ex.getStatusCode(),
                         "message", ex.getMessage(),
                         "python_error_details", ex.getPythonErrorDetail() // <-- Exact Python reason!
+                ));
+    }
+
+    @ExceptionHandler(VelocityLimitExceededException.class)
+    public ResponseEntity<?> handleVelocityExceeded(VelocityLimitExceededException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(Map.of(
+                        "error", "Velocity_LIMIT_EXCEEDED",
+                        "status", 429,
+                        "message", ex.getMessage()
                 ));
     }
 }

@@ -81,3 +81,35 @@ class AuditResponse(BaseModel):
 
     # From Generative AI (Gemini LLM)
     ai_compliance_narrative: str=Field(...,description="Executive AI generated SAR narrative for auditors")
+
+class PrecedentCase(BaseModel):
+    case_id:str
+    description:str
+    category:str
+    risk: str
+    similarity_score:float
+
+class AmlInvestigationRequest(BaseModel):
+    query: str
+    top_k:int
+
+class AmlInvestigationResponse(BaseModel):
+    query: str
+    retrieved_precedents:list[PrecedentCase]
+    investigative_assessment:str
+
+class AgentInvestigationRequest(BaseModel):
+    account_id: int
+    escalation_notes: str
+
+class AgentStep(BaseModel):
+    type: str
+    tool_name: str
+    arguments: dict | None = None
+    response_summary: str | None = None
+
+class AgentInvestigationResponse(BaseModel):
+    account_id: int
+    status: str
+    investigation_steps_executed: list[dict]
+    final_assessment_report: str

@@ -1,10 +1,19 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from models import TransactionData, AuditResponse
+from models import ( 
+    TransactionData, 
+    AuditResponse,
+    AmlInvestigationRequest,
+    AmlInvestigationResponse,
+    AgentInvestigationRequest,
+    AgentInvestigationResponse)
 from ml_service import fraud_model
 from ai_analyst import ai_analyst
 from categorizer import categorizer
 from features import extract_behavioral_features
+from rag_service import rag_service
+from datetime import datetime
+from agent_service import agent_service
 
 # Initialize the application (like @SpringBootApplication)
 app=FastAPI(
@@ -118,7 +127,7 @@ def audit_transaction(tx: TransactionData):
 
 
     # 4. Unsupervised ML Anomaly Detection (Isolation Forest)
-    if is_deposit:
+    if is_deposit and not tx_international:
         is_anomaly=False
         ml_risk=0.0
     else:
@@ -134,7 +143,7 @@ def audit_transaction(tx: TransactionData):
     )
 
     # 5. Hybrid Decision Logic
-    if has_critical_sacurity_violation or ml_risk>=85 or (tx.amount>=200000 and tx.is_international):
+    if (has_critical_sacurity_violation and tx.amount>=100000) or ml_risk>=85 or (tx.amount>=200000 and tx.is_international):
         final_decision="BLOCKED"
         recommendation="Immediate account lock. Escalate to AML compliance unit."
 
@@ -144,13 +153,33 @@ def audit_transaction(tx: TransactionData):
         ml_risk=min(ml_risk,37.0)
         recommendation="Low-value routine retail transaction authorized under frictionless rails."
 
-    elif is_anomaly and ml_risk>=45 and len(rules_triggered)>0:
+    elif has_critical_sacurity_violation or (is_anomaly and ml_risk>=45 and len(rules_triggered)>0):
         final_decision="MANUAL_REVIEW"
         recommendation="Hold settlement. Trigger 2-factor OTP verification to account holder"
 
     else:
         final_decision="APPROVED"
         recommendation="Transaction authorized with low risk profile"
+
+    # Dynamic RAG Vector Ingestion for Blocked Incidents
+    if final_decision == "BLOCKED":
+        incident_id = f"INC-{tx.account_id}-{int(datetime.now().timestamp())}"
+        reason_summary = "; ".join(rules_triggered) if rules_triggered else "Critical anomaly risk score"
+        
+        incident_summary = (
+            f"Blocked Transaction on Account #{tx.account_id}: "
+            f"Attempted {tx.transaction_type} of ₹{tx.amount:,.2f} at {tx.location}. "
+            f"Reason: {reason_summary}. ML Anomaly Score: {round(ml_risk, 3)}."
+        )
+        try:
+            rag_service.ingest_live_incident(
+                case_id=incident_id,
+                description=incident_summary,
+                category=pred_category,
+                risk="CRITICAL"
+            )
+        except Exception as e:
+            print(f">> [RAG Service] Dynamic ingestion skipped: {e}")
 
     # 6. Generative AI Narrative (passes category and ratio to LLM)
     enriched_tx_data={
@@ -183,3 +212,25 @@ def audit_transaction(tx: TransactionData):
         recommendation=recommendation,
         ai_compliance_narrative=ai_narrative
     )
+
+@app.post("/api/v1/aml/investigate", response_model=AmlInvestigationResponse)
+def investigate_aml(request: AmlInvestigationRequest):
+    """
+    RAG-powered AML investigation endpoint:
+    Searches ChromaDB vector precedents and generates an executive STR/FIU dossier using Gemini.
+    """
+    result = rag_service.investigate_analyst_query(request.query)
+    return result
+
+@app.post("/api/v1/agent/investigate", response_model=AgentInvestigationResponse)
+def trigger_agent_investigation(req: AgentInvestigationRequest):
+    """
+    Triggers an autonomous AML compliance agent. 
+    The agent independently queries bank ledger details, searches ChromaDB vector precedents, 
+    and executes administrative account freezes if money laundering or mule activity is confirmed.
+    """
+    result = agent_service.run_investigation(
+        account_id=req.account_id,
+        escalation_notes=req.escalation_notes
+    )
+    return result
