@@ -63,7 +63,7 @@ public class AiWorkerClient {
                 .build();
         try {
             return aiWorkerRestClient.post()
-                    .uri("http://localhost:8000/api/v1/aml/investigate")
+                    .uri("/api/v1/aml/investigate")
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
                     .body(request)
@@ -87,7 +87,7 @@ public class AiWorkerClient {
                 .build();
         try {
             return aiWorkerRestClient.post()
-                    .uri("http://localhost:8000/api/v1/agent/investigate")
+                    .uri("/api/v1/agent/investigate")
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
                     .body(request)

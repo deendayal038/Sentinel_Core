@@ -1,8 +1,9 @@
 import httpx
 from rag_service import rag_service
 from datetime import datetime
+import os
 
-JAVA_ANCHOR_URL = "http://localhost:8080/api/v1"
+JAVA_ANCHOR_URL = os.getenv("JAVA_ANCHOR_URL","http://localhost:8080/api/v1")
 
 def get_account_details(account_id:int)->dict:
     try:

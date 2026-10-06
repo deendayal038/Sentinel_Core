@@ -153,7 +153,7 @@ def audit_transaction(tx: TransactionData):
         ml_risk=min(ml_risk,37.0)
         recommendation="Low-value routine retail transaction authorized under frictionless rails."
 
-    elif has_critical_sacurity_violation or (is_anomaly and ml_risk>=45 and len(rules_triggered)>0):
+    elif has_critical_sacurity_violation or (is_anomaly and ml_risk>=50 and len(rules_triggered)>0):
         final_decision="MANUAL_REVIEW"
         recommendation="Hold settlement. Trigger 2-factor OTP verification to account holder"
 
