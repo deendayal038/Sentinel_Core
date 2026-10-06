@@ -266,8 +266,9 @@ sentinel-core/
 │   │       └── AiWorkerClient.java          # Multi-service HTTP client to Python
 │   ├── src/main/resources/
 │   │   └── application.properties           # PostgreSQL, Redis & AI Worker config
-│   ├── docker-compose.yml                    # Local PostgreSQL & Redis containers
-│   └── pom.xml                               # Maven project dependencies
+│   ├── docker-compose.dev.yml.bak           # Local PostgreSQL & Redis containers
+|   ├── Dockerfile                           # Multi-stage Maven + Alpine JRE image
+│   └── pom.xml                              # Maven project dependencies
 │
 └── ai-worker/                               # Python FastAPI Machine Learning Worker (Port 8000)
     ├── venv/                                # Python virtual environment (ignored)
@@ -281,6 +282,7 @@ sentinel-core/
     ├── rag_service.py                       # ChromaDB Vector Store & Precedent Search
     ├── agent_tools.py                       # ReAct Actuators & Sensors (Spring Boot Bridge)
     ├── agent_service.py                     # Autonomous Agent Controller & Tool Calling Loop
+    ├── Dockerfile                           # Lightweight Python 3.11 runtime
     ├── requirements.txt                     # Python package dependencies
     └── main.py                              # FastAPI REST microservice & endpoints
 ```
@@ -555,18 +557,57 @@ Both microservices generate interactive API specifications out of the box:
 - **Python AI Worker Swagger UI:** `http://localhost:8000/docs`
 - **Python OpenAPI Specification:** `http://localhost:8000/openapi.json`
 - **Spring Boot Actuator / Health:** `http://localhost:8080/actuator/health`
+
 ## 🚀 Local Setup & Running
+You can run SentinelCore in **two ways**:
+1. **Option A (Recommended — 1-Command Docker Deployment):** Launches all 4 microservices in isolated containers with zero manual configuration.
+2. **Option B (Development Mode in VS Code):** Runs PostgreSQL and Redis in Docker while running Java and Python directly in your VS Code terminals for real-time debugging.
+---
+### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+- [Git](https://git-scm.com/)
+- A free [Google Gemini API Key](https://aistudio.google.com/)
+---
+### 🌟 Option A: 1-Command Docker Deployment (Production / Demo Mode)
+
+#### 1. Clone the Repository
+```bash
+git clone https://github.com/deendayal038/Sentinel_Core.git
+cd Sentinel_Core
+
+### 2. Configure Environment Variables
+Create a `.env` file in the root directory:
+```env
+POSTGRES_DB=your_database_name
+POSTGRES_USER=your_username_here
+POSTGRES_PASSWORD=your_password_here
+GEMINI_API_KEY=your_gemini_api_key
+
+### 3. Build And Launch All 4 Microservices
+```bash
+docker compose up --build -d
+
+### 4. Seed Account #1 (First-Time Setup)
+```bash
+docker exec -i postgres-db psql -U postgres -d sentinel_db -c "INSERT INTO accounts (account_number, customer_name, balance, registerpan, status) VALUES ('ACC-1042', 'Deendayal', 50000.0, 'ABCDE1234F', 'ACTIVE');"
+
+### 5. Verify Containers
+```bash
+docker ps
+
+### 🌟 Option B: Development Mode in VS Code
 
 ### Prerequisites
-- Java 17 or 21
+- Java 21
 - Python 3.11+
 - Docker Desktop
 - Git
+
 ### Step 1: Start PostgreSQL and Redis via Docker
 From the project root:
 
 ```bash
-docker run -d --name postgres-db -p 5332:5432 -e POSTGRES_DB=sentinel_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres postgres:16-alpine
+docker run -d --name postgres-db -p 5332:5432 -e POSTGRES_DB=your_database_name -e POSTGRES_USER=your_username_here -e POSTGRES_PASSWORD=you_password_here postgres:16-alpine
 docker run -d --name redis-cache -p 6379:6379 redis:7-alpine
 ```
 
