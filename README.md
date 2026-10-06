@@ -570,48 +570,62 @@ You can run SentinelCore in **two ways**:
 ---
 ### 🌟 Option A: 1-Command Docker Deployment (Production / Demo Mode)
 
-#### 1. Clone the Repository
+## 1. Clone the Repository
+
 ```bash
 git clone https://github.com/deendayal038/Sentinel_Core.git
 cd Sentinel_Core
+```
 
-### 2. Configure Environment Variables
+## 2. Configure Environment Variables
+
 Create a `.env` file in the root directory:
+
 ```env
 POSTGRES_DB=your_database_name
 POSTGRES_USER=your_username_here
 POSTGRES_PASSWORD=your_password_here
 GEMINI_API_KEY=your_gemini_api_key
+```
 
-### 3. Build And Launch All 4 Microservices
+## 3. Build And Launch All 4 Microservices
+
 ```bash
 docker compose up --build -d
+```
 
-### 4. Seed Account #1 (First-Time Setup)
+## 4. Seed Account #1 (First-Time Setup)
+
 ```bash
 docker exec -i postgres-db psql -U postgres -d sentinel_db -c "INSERT INTO accounts (account_number, customer_name, balance, registerpan, status) VALUES ('ACC-1042', 'Deendayal', 50000.0, 'ABCDE1234F', 'ACTIVE');"
+```
 
-### 5. Verify Containers
+## 5. Verify Containers
+
 ```bash
 docker ps
+```
 
-### 🌟 Option B: Development Mode in VS Code
+# 🌟 Option B: Development Mode in VS Code
 
-### Prerequisites
+## Prerequisites
+
 - Java 21
 - Python 3.11+
 - Docker Desktop
 - Git
 
-### Step 1: Start PostgreSQL and Redis via Docker
+## Step 1: Start PostgreSQL and Redis via Docker
+
 From the project root:
 
 ```bash
 docker run -d --name postgres-db -p 5332:5432 -e POSTGRES_DB=your_database_name -e POSTGRES_USER=your_username_here -e POSTGRES_PASSWORD=you_password_here postgres:16-alpine
+
 docker run -d --name redis-cache -p 6379:6379 redis:7-alpine
 ```
 
-Verify both containers are running:
+Verify both containers are running
 
 ```bash
 docker ps
